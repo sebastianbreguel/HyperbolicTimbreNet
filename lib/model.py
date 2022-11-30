@@ -1,4 +1,9 @@
 import tensorflow as tf
+# from lib.layer import PManifold
+# from hyperlib.nn.layers.lin_hyp import LinearHyperbolic
+# from hyperlib.manifold.poincare import Poincare
+from .hyp_model.lin_hyp import LinearHyperbolic
+from .hyp_model.manifold import Poincare
 
 class CVAE(tf.keras.Model):
     def __init__(self, latent_dim):
@@ -60,14 +65,16 @@ class CVAE(tf.keras.Model):
                     pool_size=(2, 2),strides=2,padding='same'),
                 
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(latent_dim + latent_dim),
+                # tf.keras.layers.Dense(latent_dim + latent_dim),
+                LinearHyperbolic(4, Poincare(), 1),
           ]
         )
         
         self.generative_net = tf.keras.Sequential(
             [
                 tf.keras.layers.InputLayer(input_shape=(latent_dim,)),
-                tf.keras.layers.Dense(units=1*8*256),
+                # tf.keras.layers.Dense(units=1*8*256),
+                LinearHyperbolic(1*8*256, Poincare(), 1),
                 tf.keras.layers.Reshape(target_shape=(1, 8, 256)),
                 
                 tf.keras.layers.UpSampling2D(
