@@ -1,11 +1,9 @@
 import os
-import sys
 import time
 import datetime
 import numpy as np
 import tensorflow as tf
 from lib.model import CVAE as Model
-from lib.latent_chord import latent_chord
 from scipy.io.wavfile import read as read_wav
 from lib.specgrams_helper import SpecgramsHelper
 
@@ -18,18 +16,14 @@ def log_normal_pdf(sample, mean, logvar, raxis=1):
     return tf.reduce_sum(-.5 * ((sample - mean) ** 2. * tf.exp(-logvar) + logvar + log2pi),axis=raxis)
 
 def compute_loss(model, x, beta):
-    # print(x, beta,"AAAAAAAAA\n")
     mean, logvar = model.encode(x)
     z = model.reparameterize(mean, logvar)
-    # print(mean, logvar,"BBBBBBBBB\n")
     x_logit = model.decode(z)
-    # print(x_logit,"CCCCCCCCC\n")
     mse = tf.keras.losses.MeanSquaredError(reduction = tf.keras.losses.Reduction.NONE)
     MSE = mse(x, x_logit)
     logpx_z = -tf.reduce_sum(MSE, axis=[1, 2])
     logpz = log_normal_pdf(z, 0., 0.)
     logqz_x = log_normal_pdf(z, mean, logvar)
-    # print(logpx_z, logpz, logqz_x,"DDDDDDDDD\n")
     return -tf.reduce_mean(logpx_z + beta*(logpz - logqz_x))
 
 def compute_apply_gradients(model, x, optimizer, beta):
@@ -53,7 +47,7 @@ def train_model(latent_dim,
     
     if gpu:
         os.environ["CUDA_VISIBLE_DEVICES"]="1"
-        print(tf.test.is_gpu_available())
+        print(tf.config.list_physical_devices('GPU'))
     
     spec_helper = SpecgramsHelper(audio_length=64000,
                                   spec_shape=(128, 1024),
@@ -100,13 +94,14 @@ def train_model(latent_dim,
     train_dataset = tf.data.Dataset.from_tensor_slices(train_melgrams).shuffle(TRAIN_BUF,seed=21).batch(BATCH_SIZE)
     test_dataset = tf.data.Dataset.from_tensor_slices(test_melgrams).shuffle(TEST_BUF,seed=21).batch(BATCH_SIZE)
     print('Success preparing train and test dataset!')
-    
 
-    
+
+
 
     #declare model
     model = Model(latent_dim)
     model.inference_net.summary()
+    model.generative_net.summary()
 
     print('New Model')
     description = 'mel_p0_latent_'+str(latent_dim)+'_lr_'+str(learning_rate)+'_b_'+str(beta)
@@ -124,23 +119,33 @@ def train_model(latent_dim,
 
     #Train
     best_elbo = -1e20
-
+    test_losses = []
+    train_losses = []
     for epoch in range(start_epoch, start_epoch+ epochs):
         start_time = time.time()
         train_loss = tf.keras.metrics.Mean()
+        print("aca")
+        # dos = time.time()
         for train_x in train_dataset:
             train_loss(compute_apply_gradients(model, train_x, optimizer, beta))
+            # tres = time.time()
+            # print("aca2", len(train_x), tres-dos)
+            # dos = tres
         end_time = time.time()
 
         test_loss = tf.keras.metrics.Mean()
         for test_x in test_dataset:
             test_loss(compute_loss(model, test_x, beta))
         elbo = -test_loss.result()
+        # test acurracy of reconstruction of test data
 
         with test_summary_writer.as_default():
             tf.summary.scalar('Test ELBO', -test_loss.result(), step=epoch)
         with train_summary_writer.as_default():
             tf.summary.scalar('Train ELBO', -train_loss.result(), step=epoch)
+        test_losses.append([-test_loss.result(),epoch])
+        train_losses.append([-train_loss.result(),epoch])
+
 
         print('Epoch: {}, Test set ELBO: {}, time elapse for current epoch {}'.format(epoch,elbo,end_time - start_time))
 
@@ -149,6 +154,11 @@ def train_model(latent_dim,
             best_elbo = elbo
             model.save_weights(model_save+'_se_'+str(start_epoch)+'_ee_'+str(epochs+start_epoch)+'_ep_'+str(epoch))
             model.save_weights(model_save+'_the_best')
+    # create a file for losses and write the losses
+    f = open(model_save+'_losses.txt', 'w')
+    f.write('Train losses: '+str(train_losses)+'\n')
+    f.write('Test losses: '+str(test_losses)+'\n')
+    f.close()
 
 
 
@@ -168,9 +178,9 @@ if __name__ == '__main__':
     examples = ['0','1','2','3','4','5','6','7','8','9']
     
     #Select training params
-    epochs = 50
-    beta = 0.2
-    learning_rate = 3e-5
+    epochs = 10
+    beta = 0.3
+    learning_rate = 3e-4
     optimizer = tf.keras.optimizers.Adam(learning_rate)
     
     train_model(latent_dim,

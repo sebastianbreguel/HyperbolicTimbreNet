@@ -255,7 +255,7 @@ def asinh(x):
     return tf.math.asinh(x)
 
 def atanh(x):
-    x = tf.clip_by_value(x, clip_value_min=-1 + 1e-5, clip_value_max=1 - 1e-5)
+    x = tf.clip_by_value(x, clip_value_min=-1 + 1e-3, clip_value_max=1 - 1e-3)
     return tf.math.atanh(x)
 
 @tf.custom_gradient

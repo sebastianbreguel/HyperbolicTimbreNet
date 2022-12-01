@@ -1,10 +1,6 @@
-import os
-import sys
 import itertools
 import numpy as np
-import tensorflow as tf
 import matplotlib.pyplot as plt
-import sklearn
 from sklearn.cross_decomposition import CCA
 from lib.model import CVAE as Model
 from lib.latent_chord import latent_chord
@@ -119,7 +115,7 @@ def timbrenet_generate_latent_map(trained_model_path,
     
 if __name__ == '__main__':
     #Select trained model path
-    trained_model_path = './model_weights/2022_12_01/00_57_28mel_p0_latent_2_lr_3e-05_b_0.2_the_best'
+    trained_model_path = './model_weights/2022_12_01/17_58_19mel_p0_latent_2_lr_0.0003_b_0.2_the_best'
     #trained_model_path = './trained_models/450_piano_chords/latent_8_lr_3e-05_epoch_141_of_501'
     
     #Select latent dimension 

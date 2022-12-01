@@ -3,3 +3,5 @@ lib/hyp_model/__pycache__/
 model_weights/
 logs/
 prueba.py
+processing.py
+*.txt
