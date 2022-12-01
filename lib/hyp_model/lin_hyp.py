@@ -36,7 +36,6 @@ class LinearHyperbolic(keras.layers.Layer):
         """
         Called during forward pass of a neural network. Uses hyperbolic matrix multiplication
         """
-        # TODO: remove casting and instead recommend setting default tfd values to float64
         inputs = tf.cast(inputs, tf.float32)
         mv = self.manifold.mobius_matvec(self.kernel, inputs, self.c)
         res = self.manifold.proj(mv, c=self.c)

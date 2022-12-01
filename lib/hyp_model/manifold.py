@@ -233,7 +233,6 @@ class Poincare(Manifold):
         scores = (1. / denom) * scores
         return scores
 
-import tensorflow as tf
 
 """
 Tensorflow Math functions with clipping as required for hyperbolic functions.
@@ -249,19 +248,19 @@ def tanh(x, clamp=15):
     return tf.math.tanh(tf.clip_by_value(x, clip_value_min=-clamp, clip_value_max=clamp))
 
 def arcosh(x):
-    x = tf.clip_by_value(x, clip_value_min=1+1e-15, clip_value_max=tf.reduce_max(x))
+    x = tf.clip_by_value(x, clip_value_min=1+1e-5, clip_value_max=tf.reduce_max(x))
     return tf.math.acosh(x)
 
 def asinh(x):
     return tf.math.asinh(x)
 
 def atanh(x):
-    x = tf.clip_by_value(x, clip_value_min=-1 + 1e-15, clip_value_max=1 - 1e-15)
+    x = tf.clip_by_value(x, clip_value_min=-1 + 1e-5, clip_value_max=1 - 1e-5)
     return tf.math.atanh(x)
 
 @tf.custom_gradient
 def custom_artanh_cg(x):
-    x = tf.clip_by_value(x, clip_value_min=-1 + 1e-15, clip_value_max=1 - 1e-15)
+    x = tf.clip_by_value(x, clip_value_min=-1 + 1e-5, clip_value_max=1 - 1e-5)
     z = tf.cast(x, tf.float32, name=None)
     temp = tf.math.subtract(tf.math.log(1 + z), (tf.math.log(1 - z)))
     def artanh_grad(grad):

@@ -65,16 +65,21 @@ class CVAE(tf.keras.Model):
                     pool_size=(2, 2),strides=2,padding='same'),
                 
                 tf.keras.layers.Flatten(),
-                # tf.keras.layers.Dense(latent_dim + latent_dim),
-                LinearHyperbolic(4, Poincare(), 1),
+                tf.keras.layers.Dense(4*(latent_dim + latent_dim)),
+
+                tf.keras.layers.Dense(latent_dim + latent_dim),
+                # LinearHyperbolic( 4 * (latent_dim+latent_dim), Poincare(), 1),
+                # LinearHyperbolic(latent_dim+latent_dim, Poincare(), 1),
           ]
         )
         
         self.generative_net = tf.keras.Sequential(
             [
                 tf.keras.layers.InputLayer(input_shape=(latent_dim,)),
-                # tf.keras.layers.Dense(units=1*8*256),
-                LinearHyperbolic(1*8*256, Poincare(), 1),
+                tf.keras.layers.Dense(4*(latent_dim + latent_dim)),
+                tf.keras.layers.Dense(units=1*8*256),
+                # LinearHyperbolic(4(latent_dim+latent_dim)), Poincare(), 1),
+                # LinearHyperbolic(1*8*256, Poincare(), 1),
                 tf.keras.layers.Reshape(target_shape=(1, 8, 256)),
                 
                 tf.keras.layers.UpSampling2D(
@@ -166,7 +171,9 @@ class CVAE(tf.keras.Model):
         return self.decode(eps, apply_tanh)
 
     def encode(self, x):
+        # print(x,"Xxxx\n", self.inference_net(x), "ENCONDINGGGGG\n")
         mean, logvar = tf.split(self.inference_net(x), num_or_size_splits=2, axis=1)
+        # print(mean, logvar, "holaaaa")
         return mean, logvar
 
     def reparameterize(self, mean, logvar):

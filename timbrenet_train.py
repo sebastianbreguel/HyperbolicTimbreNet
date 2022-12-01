@@ -18,15 +18,18 @@ def log_normal_pdf(sample, mean, logvar, raxis=1):
     return tf.reduce_sum(-.5 * ((sample - mean) ** 2. * tf.exp(-logvar) + logvar + log2pi),axis=raxis)
 
 def compute_loss(model, x, beta):
+    # print(x, beta,"AAAAAAAAA\n")
     mean, logvar = model.encode(x)
     z = model.reparameterize(mean, logvar)
+    # print(mean, logvar,"BBBBBBBBB\n")
     x_logit = model.decode(z)
-    
+    # print(x_logit,"CCCCCCCCC\n")
     mse = tf.keras.losses.MeanSquaredError(reduction = tf.keras.losses.Reduction.NONE)
     MSE = mse(x, x_logit)
     logpx_z = -tf.reduce_sum(MSE, axis=[1, 2])
     logpz = log_normal_pdf(z, 0., 0.)
     logqz_x = log_normal_pdf(z, mean, logvar)
+    # print(logpx_z, logpz, logqz_x,"DDDDDDDDD\n")
     return -tf.reduce_mean(logpx_z + beta*(logpz - logqz_x))
 
 def compute_apply_gradients(model, x, optimizer, beta):
@@ -131,7 +134,7 @@ def train_model(latent_dim,
 
         test_loss = tf.keras.metrics.Mean()
         for test_x in test_dataset:
-              test_loss(compute_loss(model, test_x, beta))
+            test_loss(compute_loss(model, test_x, beta))
         elbo = -test_loss.result()
 
         with test_summary_writer.as_default():
@@ -165,7 +168,7 @@ if __name__ == '__main__':
     examples = ['0','1','2','3','4','5','6','7','8','9']
     
     #Select training params
-    epochs = 5
+    epochs = 50
     beta = 0.2
     learning_rate = 3e-5
     optimizer = tf.keras.optimizers.Adam(learning_rate)
